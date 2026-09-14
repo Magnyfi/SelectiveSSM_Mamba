@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class SelectiveSSM(nn.Module):
     def __init__(self,d_model,d_state,dt_rank: int = 1):
         super().__init__()
@@ -25,8 +26,8 @@ class SelectiveSSM(nn.Module):
  
         delta_t = F.softplus(self.delta_raw(x_t)).unsqueeze(-1)
 
-        B_t = self.B_raw(x_t).unsqueeze(-1).T
-        C_t = self.C_raw(x_t).unsqueeze(-1).T
+        B_t = self.B_raw(x_t).unsqueeze(1)
+        C_t = self.C_raw(x_t).unsqueeze(1)
 
         A_bar_t = torch.exp(self.A_t*delta_t)
         B_bar_t = (1.0 / (delta_t * self.A_t)) * (A_bar_t - 1.0) * (delta_t * B_t)
@@ -34,12 +35,14 @@ class SelectiveSSM(nn.Module):
         return A_bar_t,B_bar_t,C_t
 
 
-    def forward(self, x_matrix, seq_length: int = 10):
+    def forward(self, x_matrix):
+
+        batch,seq_length,_ = x_matrix.shape
 
         outputs = []       
-        H_prevt = torch.zeros(self.d_model,self.d_state)
+        H_prevt = torch.zeros(batch,self.d_model,self.d_state)
         for i in range(0,seq_length):
-            x_t = x_matrix[:,i]
+            x_t = x_matrix[:,i,:]
 
             A_bar_t,B_bar_t,C_t = self.discretize(x_t)
 
@@ -52,11 +55,11 @@ class SelectiveSSM(nn.Module):
         return outputs, H_t
 
 model = SelectiveSSM(d_model=16, d_state=8)
-x_input = torch.randn(16, 10)  # (d_model, seq_len)
+x_input = torch.randn(4,10, 16)  # (d_model, seq_len)
 
 y_output, final_state = model(x_input)
-print("Output Shape:     ", y_output.shape)     # torch.Size([16, 10])
-print("Final State Shape:", final_state.shape)   # torch.Size([16, 8])
+print("Output Shape:     ", y_output.shape)     # torch.Size([4,10, 16])
+print("Final State Shape:", final_state.shape)   # torch.Size([4,16, 8])
 
 
 
