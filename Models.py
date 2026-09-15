@@ -56,6 +56,20 @@ class SelectiveSSM(nn.Module):
         outputs = torch.stack(outputs, dim=1)
         return outputs, H_values
 
+class SSMBlock(nn.Module):
+    def __init__(self, d_model, d_state, dt_rank: int = 1):
+        super().__init__()
+        self.norm = nn.LayerNorm(d_model)
+        self.ssm = SelectiveSSM(d_model, d_state, dt_rank)
+
+    def forward(self, x):
+        # pre-norm residual, same pattern as Transformer blocks
+        return x + self.ssm(self.norm(x))
+
+
+
+
+
 
 
 class SSM_withoutExp(nn.Module):
@@ -111,6 +125,8 @@ class SSM_withoutExp(nn.Module):
         H_values = torch.stack(H_values, dim = 1)
         outputs = torch.stack(outputs, dim=1)
         return outputs, H_values
+
+
 
 
 
