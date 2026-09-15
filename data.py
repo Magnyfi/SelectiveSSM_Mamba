@@ -5,14 +5,14 @@ import torch.nn as nn
 # take a series of L tokens out of which K are content tokens and the rest are noise
 # noise is denoted by number 0 and content tokens are denoted by numbers from 1 to L
 
-num_content_token = 30
-vocab_size = 32
+num_content_token = 10
+vocab_size = 12
 d_model = 16
 
 def synthetic_data(batch,L:int = 64,K:int = 16):
     
     def generate(L,K):
-        num_content_token = 30
+        num_content_token = 10
         noise_token = 0
         delim_token = num_content_token + 1
 

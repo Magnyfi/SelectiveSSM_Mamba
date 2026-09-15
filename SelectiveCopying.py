@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from data import synthetic_data, vocab_size
+import numpy as np
+from matplotlib import pyplot as plt
 
 class SelectiveSSM(nn.Module):
     def __init__(self,d_model,d_state,dt_rank: int = None):
@@ -130,12 +132,13 @@ def train(
     d_state: int = 16,
     vocab_size: int = 32,
     lr: float = 1e-3,
-    log_every: int = 50,
+    log_every: int = 500,
     device: str = "cuda" if torch.cuda.is_available() else "cpu",
 ):
     model = SelectiveCopyingModel(vocab_size=vocab_size, d_model=d_model, d_state=d_state).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
+    losses = [ ]
     for step in range(1, num_steps + 1):
        
         seqs, targets, masks = synthetic_data(batch=batch_size, L=L, K=K)
@@ -147,7 +150,7 @@ def train(
         
         loss, acc = Loss_Function(logits, targets, masks)
 
-        
+        losses.append(loss.item())        
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -155,8 +158,13 @@ def train(
         if step % log_every == 0 or step == 1:
             print(f"step {step:5d} | loss {loss.item():.4f} | exact-match acc {acc.item()*100:5.1f}%")
 
-    return model
+    return model,np.array(losses)
 
 
+model_new,losses = train(8000,50,10,4,16,8)
 
-train()
+
+t = range(8000)
+plt.plot(t,losses)
+plt.show()
+
